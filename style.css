@@ -50,6 +50,28 @@ body {
     text-shadow: 0 0 10px var(--glow-color);
 }
 
+#history-container {
+    margin: 0.5rem 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 24px;
+}
+
+#round-history {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.history-item {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    background-color: #222;
+}
+
 .player-info {
     display: flex;
     justify-content: space-around;
@@ -79,6 +101,13 @@ body {
     pointer-events: none; /* Allows clicks to go through to the canvas if needed */
 }
 
+#multiplier-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
 #multiplier-value {
     font-family: var(--font-display);
     font-size: 6rem;
@@ -86,6 +115,14 @@ body {
     color: #fff;
     text-shadow: 0 0 20px var(--green-glow);
     line-height: 1;
+    transition: all 0.3s ease; /* For smooth color changes */
+}
+
+#momentum-indicator {
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 0 15px;
 }
 
 #countdown-timer {
@@ -168,4 +205,84 @@ body {
         font-size: 1.2rem;
         padding: 0.8rem 1.5rem;
     }
+}
+
+/* Tutorial Modal Styles */
+#tutorial-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(8, 8, 16, 0.85);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: var(--container-background);
+    padding: 2rem;
+    border-radius: 15px;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 25px var(--glow-color);
+    max-width: 550px;
+    text-align: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.modal-content h2 {
+    font-family: var(--font-display);
+    color: var(--primary-color);
+    margin-top: 0;
+    text-shadow: 0 0 10px var(--glow-color);
+}
+
+.modal-content p {
+    margin-bottom: 1.5rem;
+}
+
+.modal-content ol {
+    text-align: left;
+    margin: 1.5rem 0;
+    padding-left: 1.5rem;
+    line-height: 1.7;
+}
+
+.modal-content ol li {
+    margin-bottom: 1rem;
+}
+
+.modal-content ol span {
+    color: var(--primary-color);
+    font-weight: bold;
+}
+
+#close-tutorial {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #000;
+    background-color: #00ff64;
+    border: none;
+    border-radius: 8px;
+    padding: 0.8rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 15px var(--green-glow);
+    width: 60%;
+}
+
+#close-tutorial:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--green-glow);
 }

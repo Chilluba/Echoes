@@ -11,6 +11,10 @@
     <div id="game-container">
         <div id="header">
             <h1>Echoes — Momentum Trading Game</h1>
+            <div id="history-container">
+                <span>Last Rounds:</span>
+                <div id="round-history"></div>
+            </div>
             <div class="player-info">
                 <span>Balance: <span id="balance">1000</span></span>
                 <span>Winnings: <span id="winnings">0</span></span>
@@ -21,7 +25,10 @@
             <div id="game-canvas"></div>
             <div id="multiplier-display">
                 <div id="countdown-timer"></div>
-                <div id="multiplier-value">--.--x</div>
+                <div id="multiplier-container">
+                    <span id="multiplier-value">--.--x</span>
+                    <span id="momentum-indicator"></span>
+                </div>
             </div>
         </div>
 
@@ -36,5 +43,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
     <script src="game.js"></script>
+
+    <div id="tutorial-modal">
+        <div class="modal-content">
+            <h2>Welcome to Echoes!</h2>
+            <p>The goal is simple: <strong>cash out before the echo fades.</strong></p>
+            <ol>
+                <li><span>Place Your Bet</span> &mdash; Set your bet while the round is idle.</li>
+                <li><span>Watch it Climb</span> &mdash; The multiplier grows while momentum is positive.</li>
+                <li><span>Momentum Reverses!</span> &mdash; The echo can reverse at any time! An arrow will show the direction.</li>
+                <li><span>Cash Out to Win!</span> &mdash; Click "Cash Out" to secure your winnings before the multiplier drops too low.</li>
+            </ol>
+            <button id="close-tutorial">Let's Play!</button>
+        </div>
+    </div>
 </body>
 </html>

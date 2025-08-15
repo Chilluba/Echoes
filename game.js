@@ -44,12 +44,14 @@ class GameScene extends Phaser.Scene {
     countdownTimer = null;
     countdownValue = this.config.countdownSeconds;
     multiplierHistory = [];
+    roundHistory = [];
 
     // UI Elements
     ui = {};
 
     // Sound
     audioContext = null;
+    backgroundHum = null;
 
     init() {
         // Initialize or reset variables before the scene starts
@@ -64,18 +66,37 @@ class GameScene extends Phaser.Scene {
         this.setupUI();
         this.setupAudio();
         this.setupInput();
+        this.setupTutorial();
+        this.setupVisuals();
 
         this.graph = this.add.graphics();
         this.updateUI();
+        this.updateHistoryDisplay();
     }
 
     setupUI() {
         this.ui.balanceText = document.getElementById('balance');
         this.ui.winningsText = document.getElementById('winnings');
         this.ui.multiplierText = document.getElementById('multiplier-value');
+        this.ui.momentumIndicator = document.getElementById('momentum-indicator');
         this.ui.countdownText = document.getElementById('countdown-timer');
         this.ui.betAmountInput = document.getElementById('bet-amount');
         this.ui.actionButton = document.getElementById('action-button');
+        this.ui.tutorialModal = document.getElementById('tutorial-modal');
+        this.ui.closeTutorialButton = document.getElementById('close-tutorial');
+        this.ui.roundHistoryContainer = document.getElementById('round-history');
+    }
+
+    setupTutorial() {
+        this.ui.closeTutorialButton.addEventListener('click', () => {
+            this.ui.tutorialModal.style.display = 'none';
+            localStorage.setItem('echoesGameTutorialSeen', 'true');
+        });
+
+        const tutorialSeen = localStorage.getItem('echoesGameTutorialSeen');
+        if (!tutorialSeen) {
+            this.ui.tutorialModal.style.display = 'flex';
+        }
     }
 
     setupAudio() {
@@ -83,10 +104,20 @@ class GameScene extends Phaser.Scene {
         const initAudio = () => {
             if (!this.audioContext) {
                 this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Setup background hum
+                this.backgroundHum = this.audioContext.createOscillator();
+                const humGain = this.audioContext.createGain();
+                this.backgroundHum.type = 'sine';
+                this.backgroundHum.frequency.value = 80;
+                humGain.gain.value = 0.03; // Keep it subtle
+                this.backgroundHum.connect(humGain);
+                humGain.connect(this.audioContext.destination);
+                this.backgroundHum.start();
             }
             document.removeEventListener('click', initAudio);
         };
-        document.addEventListener('click', initAudio);
+        document.addEventListener('click', initAudio, { once: true });
     }
 
     playSound(type) {
@@ -96,6 +127,7 @@ class GameScene extends Phaser.Scene {
         const gainNode = this.audioContext.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
+        let duration = 0.5;
 
         switch (type) {
             case 'tick':
@@ -103,15 +135,44 @@ class GameScene extends Phaser.Scene {
                 oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime);
                 gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.1);
+                duration = 0.1;
                 break;
-            case 'ding': // Cash out
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime);
-                gainNode.gain.setValueAtTime(0.2, this.audioContext.currentTime);
+            case 'bet':
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.2);
+                duration = 0.2;
+                break;
+            case 'ding': // Cash out (ka-ching!)
+                duration = 0.4;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(587.33, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.1, this.audioContext.currentTime + 0.1);
+
                 setTimeout(() => {
-                    oscillator.frequency.setValueAtTime(659.25, this.audioContext.currentTime + 0.1);
+                    const osc2 = this.audioContext.createOscillator();
+                    const gain2 = this.audioContext.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, this.audioContext.currentTime);
+                    gain2.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                    osc2.connect(gain2);
+                    gain2.connect(this.audioContext.destination);
+                    osc2.start(this.audioContext.currentTime);
+                    osc2.stop(this.audioContext.currentTime + 0.2);
+                    gain2.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.2);
                 }, 100);
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.5);
+
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + duration);
+                break;
+            case 'reversal':
+                duration = 0.3;
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(150, this.audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(50, this.audioContext.currentTime + duration);
+                gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + duration);
                 break;
             case 'buzz': // Loss
                 oscillator.type = 'sawtooth';
@@ -122,7 +183,7 @@ class GameScene extends Phaser.Scene {
         }
 
         oscillator.start();
-        oscillator.stop(this.audioContext.currentTime + 0.5);
+        oscillator.stop(this.audioContext.currentTime + duration);
     }
 
     setupInput() {
@@ -152,6 +213,7 @@ class GameScene extends Phaser.Scene {
         this.currentBet = betValue;
         this.playerBalance -= this.currentBet;
         this.ui.winningsText.textContent = '0';
+        this.playSound('bet');
         this.updateUI();
         this.startCountdown();
     }
@@ -160,6 +222,7 @@ class GameScene extends Phaser.Scene {
         this.gameState = 'COUNTDOWN';
         this.countdownValue = this.config.countdownSeconds;
         this.ui.actionButton.disabled = true;
+        this.ui.actionButton.textContent = `Starting...`;
         this.ui.betAmountInput.disabled = true;
         this.ui.countdownText.style.display = 'block';
 
@@ -204,9 +267,36 @@ class GameScene extends Phaser.Scene {
         });
     }
 
+    setupVisuals() {
+        // Create a programmatic texture for particles
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+        graphics.fillStyle(0xffff00, 1);
+        graphics.fillCircle(8, 8, 8); // A simple gold coin particle
+        graphics.generateTexture('particle_coin', 16, 16);
+        graphics.destroy();
+
+        // Create and configure the particle emitter
+        this.cashoutEmitter = this.add.particles(0, 0, 'particle_coin', {
+            speed: { min: -400, max: 400 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 1.0, end: 0 },
+            blendMode: 'SCREEN',
+            lifespan: 800,
+            gravityY: 1000,
+            emitting: false
+        });
+    }
+
     checkMomentumReversal() {
         if (Math.random() < this.config.reversalProbability) {
+            const oldMomentum = this.momentum;
             this.momentum = (this.momentum === 'upward') ? 'downward' : 'upward';
+
+            // If momentum flips to downward, trigger screen shake and play sound
+            if (this.momentum === 'downward' && oldMomentum === 'upward') {
+                this.cameras.main.shake(150, 0.008);
+                this.playSound('reversal');
+            }
         }
     }
 
@@ -221,12 +311,29 @@ class GameScene extends Phaser.Scene {
         this.ui.winningsText.textContent = winnings.toFixed(2);
         this.ui.actionButton.textContent = `Cashed Out @ ${this.cashoutMultiplier.toFixed(2)}x`;
         this.ui.actionButton.disabled = true;
+
+        // Trigger particle explosion
+        const { width, height } = this.sys.game.canvas;
+        this.cashoutEmitter.setPosition(width / 2, height / 2);
+        this.cashoutEmitter.explode(100);
+
         this.updateUI();
         this.playSound('ding');
     }
 
     endRound(reason) {
         this.gameState = 'ROUND_OVER';
+
+        // Add final multiplier to history
+        this.roundHistory.push(this.multiplier);
+        if (this.roundHistory.length > 5) { // Keep last 5 results
+            this.roundHistory.shift();
+        }
+        this.updateHistoryDisplay();
+
+        if (this.backgroundHum) {
+            this.backgroundHum.frequency.setTargetAtTime(80, this.audioContext.currentTime, 0.1);
+        }
 
         this.reversalTimer?.remove();
         this.roundTimer?.remove();
@@ -257,8 +364,32 @@ class GameScene extends Phaser.Scene {
         this.drawGraph();
     }
 
+    updateHistoryDisplay() {
+        if (!this.ui.roundHistoryContainer) return;
+        this.ui.roundHistoryContainer.innerHTML = '';
+        this.roundHistory.forEach(multiplier => {
+            const item = document.createElement('span');
+            item.textContent = `${multiplier.toFixed(2)}x`;
+            item.classList.add('history-item');
+            if (multiplier < 1.1) {
+                item.style.color = '#ff4d4d'; // Red for low crash
+            } else if (multiplier < 2) {
+                item.style.color = '#ffeb3b'; // Yellow for medium
+            } else {
+                item.style.color = '#00ff64'; // Green for high
+            }
+            this.ui.roundHistoryContainer.appendChild(item);
+        });
+    }
+
     update(time, delta) {
         if (this.gameState !== 'IN_PROGRESS') return;
+
+        // Update background sound pitch
+        if (this.audioContext && this.backgroundHum) {
+            const targetFreq = 80 + (this.multiplier * 5);
+            this.backgroundHum.frequency.setTargetAtTime(targetFreq, this.audioContext.currentTime, 0.1);
+        }
 
         // Calculate multiplier change based on delta time for frame-rate independence
         const deltaSeconds = delta / 1000;
@@ -294,12 +425,41 @@ class GameScene extends Phaser.Scene {
     updateUI() {
         this.ui.balanceText.textContent = this.playerBalance.toFixed(2);
 
+        const multText = this.ui.multiplierText;
+        const indicator = this.ui.momentumIndicator;
+
         if (this.gameState === 'COUNTDOWN') {
             this.ui.countdownText.textContent = `Starting in ${this.countdownValue}...`;
+            indicator.textContent = '';
         } else if (this.gameState === 'IN_PROGRESS' || this.gameState === 'ROUND_OVER') {
-            this.ui.multiplierText.textContent = `${this.multiplier.toFixed(2)}x`;
-        } else {
-            this.ui.multiplierText.textContent = '--.--x';
+            multText.textContent = `${this.multiplier.toFixed(2)}x`;
+
+            // Update momentum indicator
+            indicator.textContent = this.momentum === 'upward' ? '▲' : '▼';
+            indicator.style.color = this.momentum === 'upward' ? '#00ff64' : '#ff4d4d';
+
+            // Update multiplier color based on value
+            const mult = this.multiplier;
+            if (mult < 2.0) {
+                multText.style.color = '#fff';
+                multText.style.textShadow = '0 0 20px var(--green-glow)';
+            } else if (mult < 5.0) {
+                multText.style.color = '#ffeb3b'; // Yellow
+                multText.style.textShadow = '0 0 20px rgba(255, 235, 59, 0.7)';
+            } else {
+                multText.style.color = '#ff8f3b'; // Orange
+                multText.style.textShadow = '0 0 20px rgba(255, 143, 59, 0.7)';
+            }
+            if (this.momentum === 'downward') {
+                multText.style.color = '#ff4d4d'; // Red
+                multText.style.textShadow = '0 0 20px var(--red-glow)';
+            }
+
+        } else { // WAITING_FOR_BET
+            multText.textContent = '--.--x';
+            multText.style.color = '#fff';
+            multText.style.textShadow = 'none';
+            indicator.textContent = '';
         }
     }
 
