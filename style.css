@@ -1,0 +1,171 @@
+:root {
+    --primary-color: #00ffde;
+    --background-color: #080810;
+    --container-background: #10101c;
+    --text-color: #f0f0f0;
+    --glow-color: rgba(0, 255, 222, 0.7);
+    --red-glow: rgba(255, 0, 68, 0.7);
+    --green-glow: rgba(0, 255, 100, 0.7);
+    --font-display: 'Orbitron', sans-serif;
+    --font-body: 'Roboto Mono', monospace;
+}
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+#game-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: var(--container-background);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 0 25px var(--glow-color);
+    border: 2px solid var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+#header {
+    text-align: center;
+    border-bottom: 1px solid var(--primary-color);
+    padding-bottom: 1rem;
+}
+
+#header h1 {
+    font-family: var(--font-display);
+    color: var(--primary-color);
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    text-shadow: 0 0 10px var(--glow-color);
+}
+
+.player-info {
+    display: flex;
+    justify-content: space-around;
+    font-size: 1.1rem;
+}
+
+#canvas-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+#game-canvas {
+    width: 100%;
+    height: 300px;
+    background-color: #000;
+    border-radius: 8px;
+    border: 1px solid #333;
+    overflow: hidden;
+}
+
+#multiplier-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none; /* Allows clicks to go through to the canvas if needed */
+}
+
+#multiplier-value {
+    font-family: var(--font-display);
+    font-size: 6rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 20px var(--green-glow);
+    line-height: 1;
+}
+
+#countdown-timer {
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+
+#controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+}
+
+.bet-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#bet-amount {
+    background-color: #222;
+    color: var(--text-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 5px;
+    padding: 0.5rem;
+    width: 100px;
+    font-family: var(--font-body);
+    text-align: center;
+}
+
+#action-button {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #000;
+    background-color: #00ff64;
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 15px var(--green-glow);
+    width: 80%;
+    max-width: 300px;
+}
+
+#action-button:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--green-glow);
+}
+
+#action-button:disabled {
+    background-color: #555;
+    color: #999;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Mobile scaling */
+@media (max-width: 600px) {
+    body {
+        padding: 0.5rem;
+    }
+    #game-container {
+        padding: 1rem;
+    }
+    #header h1 {
+        font-size: 1.5rem;
+    }
+    .player-info {
+        font-size: 1rem;
+    }
+    #multiplier-value {
+        font-size: 4rem;
+    }
+    #action-button {
+        font-size: 1.2rem;
+        padding: 0.8rem 1.5rem;
+    }
+}
